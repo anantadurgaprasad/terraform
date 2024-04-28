@@ -1,7 +1,11 @@
 
+variable "oidc_issuer" {
+  type        = string
+  description = "OIDC of the eks cluster"
+}
 variable "cluster_name" {
   type        = string
-  description = "EKS Cluster Name/ID"
+  description = "EKS cluster name"
 }
 
 variable "suffix" {

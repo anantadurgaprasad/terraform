@@ -2,7 +2,7 @@ data "aws_availability_zones" "azs" {
   state = "available"
 }
 locals {
-  public_subnets = { # this is for subnet creation and association to route tables
+  public_subnets = { # this is for subnet creation across azs equally
     for idx, cidr_block in var.public_subnets : cidr_block => {
       cidr_block        = cidr_block
       availability_zone = data.aws_availability_zones.azs.names[idx % length(data.aws_availability_zones.azs.names)]

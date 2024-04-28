@@ -6,7 +6,7 @@ resource "aws_vpc" "main" {
   enable_dns_support   = true
 
   tags = merge(var.tags, {
-    Name = "${var.environment}-${var.app_name}-vpc",
+    Name                                                                   = "${var.environment}-${var.app_name}-vpc",
     "kubernetes.io/cluster/${var.environment}-${var.app_name}-eks-cluster" = "shared",
   })
 
@@ -35,7 +35,7 @@ resource "aws_subnet" "public_subnets" {
   map_public_ip_on_launch = true
   availability_zone       = each.value.availability_zone
   tags = merge(var.tags, {
-    "Name" = "${var.environment}-${var.app_name}-publicsubnet",
+    "Name"                                                                 = "${var.environment}-${var.app_name}-publicsubnet",
     "kubernetes.io/cluster/${var.environment}-${var.app_name}-eks-cluster" = "shared",
     "kubernetes.io/role/elb"                                               = 1
   })
@@ -48,7 +48,7 @@ resource "aws_subnet" "private_subnets" {
   map_public_ip_on_launch = false
   availability_zone       = each.value.availability_zone
   tags = merge(var.tags, {
-    "Name" = "${var.environment}-${var.app_name}-privatesubnet",
+    "Name"                                                                 = "${var.environment}-${var.app_name}-privatesubnet",
     "kubernetes.io/cluster/${var.environment}-${var.app_name}-eks-cluster" = "shared",
     "kubernetes.io/role/internal-elb"                                      = 1
   })
@@ -57,13 +57,14 @@ resource "aws_subnet" "private_subnets" {
 
 /*Elastic IP and nat gateway */
 resource "aws_eip" "nat_eip" {
-  domain     = "vpc"
-  depends_on = [aws_internet_gateway.gw]
+  count  = var.create_nat ? 1 : 0
+  domain = "vpc"
   tags = merge(var.tags, {
     "Name" = "${var.environment}-${var.app_name}-eip"
   })
 }
 resource "aws_nat_gateway" "nat" {
+  count         = var.create_nat ? 1 : 0
   allocation_id = aws_eip.nat_eip.id
   subnet_id     = aws_subnet.public_subnets[var.public_subnets[0]].id
   depends_on    = [aws_internet_gateway.gw]
@@ -99,9 +100,10 @@ resource "aws_route" "public_internet_gateway" {
 }
 
 resource "aws_route" "private_nat_gateway" {
+  count                  = var.create_nat ? 1 : 0
   route_table_id         = aws_route_table.private.id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.nat.id
+  nat_gateway_id         = aws_nat_gateway.nat[0].id
 }
 
 /* Route table associations */

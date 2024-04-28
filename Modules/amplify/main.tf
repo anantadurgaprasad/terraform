@@ -1,13 +1,13 @@
 
 data "aws_secretsmanager_secret_version" "secret-version" {
-  secret_id = "${var.bitbucket_creds_secret_name}"
+  secret_id = var.bitbucket_creds_secret_name
 }
 resource "aws_amplify_app" "frontend" {
-  name       = var.app_name
-  repository = var.repo
-   access_token = jsondecode(data.aws_secretsmanager_secret_version.secret-version.secret_string)["access_token"] 
-#Format of Access token value is username:personalaccesstoken
-  iam_service_role_arn  = var.amplify_role
+  name         = var.app_name
+  repository   = var.repo
+  access_token = jsondecode(data.aws_secretsmanager_secret_version.secret-version.secret_string)["access_token"]
+  #Format of Access token value is username:personalaccesstoken
+  iam_service_role_arn  = aws_iam_role.amplify_role.arn
   environment_variables = var.environment_variables
   platform              = "WEB_DYNAMIC"
 
@@ -33,9 +33,9 @@ frontend:
       - '**/*'
   EOT
   lifecycle {
-    ignore_changes = [ 
+    ignore_changes = [
       custom_rule
-     ]
+    ]
   }
 }
 

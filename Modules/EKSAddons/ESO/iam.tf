@@ -1,19 +1,19 @@
 locals {
-  oidc_provider            = replace(data.aws_eks_cluster.this.identity[0].oidc[0].issuer, "https://", "")
-  
+  oidc_provider = replace(var.oidc_issuer, "https://", "")
+
 }
 resource "aws_iam_role" "this" {
-  name               = var.operator_iam_role_name
+  count              = var.create_external_secret_prereq ? 1 : 0
+  name               = var.external_secret_prereq.external_secret_irsa
   description        = "IAM Role for ESO "
-  assume_role_policy = templatefile("${path.module}/irsa-trust-policy.tftpl", { "account_id" = "${data.aws_caller_identity.current.account_id}", "oidc_provider" = "${local.oidc_provider}", "namespace" = "${var.namespace}", "service_account_name" = "${var.service_account_name}" })
-  lifecycle {
-    ignore_changes = [ assume_role_policy ]
-  }
+  assume_role_policy = templatefile("${path.module}/irsa-trust-policy.tftpl", { "account_id" = "${data.aws_caller_identity.current.account_id}", "oidc_provider" = "${local.oidc_provider}", "namespace" = "${var.external_secret_prereq.external_secret_namespace}", "service_account_name" = "${var.external_secret_prereq.external_secret_service_account_name}" })
+
 }
 
 resource "aws_iam_role_policy" "secretmanager" {
+  count  = var.create_external_secret_prereq && var.external_secret_prereq.enables_secretmanager ? 1 : 0
   name   = "ESOSecretManagerAccessPolicy"
-  role   = aws_iam_role.this.id
+  role   = aws_iam_role.this[0].id
   policy = <<EOF
 {
         "Version": "2012-10-17",
@@ -35,10 +35,11 @@ resource "aws_iam_role_policy" "secretmanager" {
     ignore_changes = [policy]
   }
 }
-/*
+
 resource "aws_iam_role_policy" "ssm" {
+  count  = var.create_external_secret_prereq && var.external_secret_prereq.enables_ssm ? 1 : 0
   name   = "ESOSSMAccessPolicy"
-  role   = aws_iam_role.this.id
+  role   = aws_iam_role.this[0].id
   policy = <<EOF
 {
     "Version": "2012-10-17",
@@ -49,15 +50,12 @@ resource "aws_iam_role_policy" "ssm" {
                 "ssm:GetParametersByPath",
                 "ssm:GetParameters",
                 "ssm:GetParameter",
-                "ssm:DescribeParameters",
+                "ssm:DescribeParameters"
             ],
             "Resource": "*"
         }
     ]
 }
   EOF
-  lifecycle {
-    ignore_changes = [policy]
-  }
+
 }
-*/

@@ -12,7 +12,7 @@ resource "aws_eks_node_group" "eks-node" {
   cluster_name    = aws_eks_cluster.eks-cluster.name
   node_group_name = "${var.environment}-${var.app_name}-eks-node"
   node_role_arn   = aws_iam_role.eks-node-role.arn
-  subnet_ids      = var.private_subnet_ids
+  subnet_ids      = var.subnet_ids
   tags = merge(var.tags, {
     Name = "${var.environment}-${var.app_name}-eks-nodegroup"
   })
@@ -35,7 +35,7 @@ resource "aws_eks_node_group" "eks-node" {
   }
 
   depends_on = [
-    aws_iam_role.eks-node-role 
+    aws_iam_role.eks-node-role
   ]
 }
 
@@ -63,13 +63,13 @@ resource "aws_iam_role" "eks-node-role" {
     Name = "${var.environment}-${var.app_name}-eks-iam-role"
   })
   lifecycle {
-    ignore_changes = [ assume_role_policy ]
+    ignore_changes = [assume_role_policy]
   }
 }
 
 
 resource "aws_iam_role_policy_attachment" "eks-node-role-policy-attach" {
   role       = aws_iam_role.eks-node-role.name
-  count      = length(compact(concat(var.node_policies,local.node_policies)))
-  policy_arn = compact(concat(var.node_policies,local.node_policies))[count.index]
+  count      = length(compact(concat(var.node_policies, local.node_policies)))
+  policy_arn = compact(concat(var.node_policies, local.node_policies))[count.index]
 }
