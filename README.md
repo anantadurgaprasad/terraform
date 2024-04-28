@@ -1,2 +1,2 @@
-# terraform
-This repo contains terraform code for various scenarios. All the code is written by me. This is to keep in touch with terraform.
+# About the Repo
+This Repo consists subset of various modules I have written from scratch for various requirements. 
